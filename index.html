@@ -114,7 +114,7 @@ const HORAS_POR_SEMANA = 12;   // sáb 8 h + dom 4 h
 // TARIFAS[nivel][modalidad][grado]  (S/. por hora efectiva dictada)
 const TARIFAS = {
   maestria:  { presencial: { M: 115, D: 120 }, virtual: { M: 85, D: 90 } },
-  doctorado: { presencial: { D: 130 },         virtual: { D: 100 } },
+  doctorado: { presencial: { M: 130, D: 130 }, virtual: { M: 100, D: 100 } },  // tarifa única
 };
 // Tarifas que reemplazan a las anteriores cuando el docente es de FUERA de la localidad
 const TARIFAS_FUERA = {
@@ -219,10 +219,6 @@ function actualizar() {
     return limpiar("Segunda celda: 1.ª letra M o D (grado); 2.ª letra L o F (procedencia).");
   }
   const grado = t2[0], proc = t2[1];
-  if (nivel === "doctorado" && grado !== "D") {
-    c2.classList.add("mal");
-    return limpiar("Un programa de doctorado exige docente con grado de Doctor (D).");
-  }
   $("aviso").textContent = "";
   $("res-titulo").textContent = "Monto total · programa de " + (nivel === "doctorado" ? "doctorado" : "maestría");
   pintar(calcular(nivel, total, pres, virt, grado, proc));
