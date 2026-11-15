@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verificador de monto TDR</title>
+<style>
+  :root {
+    --bg: #FFF8F2;
+    --lavanda: #EBE0F8;
+    --lavanda-osc: #6B5A8E;
+    --cielo: #E1F0FC;
+    --menta: #E2F6EA;
+    --durazno: #FFEADB;
+    --rosa: #FCE3EA;
+    --texto: #4B4560;
+    --suave: #8A829C;
+    --borde: #E6DDF0;
+    --error: #C0566D;
+    --ok: #2E5E47;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--texto);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  }
+  header { background: var(--lavanda); padding: 18px 24px 14px; }
+  header h1 { margin: 0; font-size: 22px; color: var(--lavanda-osc); }
+  header p { margin: 4px 0 0; font-size: 13px; color: #8C7BB0; }
+  .franja { display: flex; height: 6px; }
+  .franja span { flex: 1; }
+  main { max-width: 760px; margin: 0 auto; padding: 18px 16px 32px; }
+
+  .card { border: 1px solid var(--borde); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+  .entrada { background: var(--cielo); }
+  .entrada.b { background: var(--menta); }
+  .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .campos { grid-template-columns: 1fr; } }
+  .campo { border: 1px solid var(--borde); border-radius: 12px; padding: 14px 16px; }
+  .campo.a { background: var(--cielo); }
+  .campo.b { background: var(--menta); }
+  label { display: block; font-weight: 700; color: var(--lavanda-osc); margin-bottom: 8px; }
+  input {
+    width: 100%; font: 700 30px/1 "Consolas", "Courier New", monospace; letter-spacing: 6px;
+    text-align: center; text-transform: uppercase; padding: 12px 8px;
+    border: 2px solid var(--borde); border-radius: 10px; background: #fff; color: var(--texto);
+  }
+  input:focus { outline: none; border-color: #B9A6DE; }
+  input.mal { border-color: var(--error); }
+  .ayuda { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--suave); }
+  .ayuda b { color: var(--texto); }
+
+  .aviso { min-height: 20px; margin: 0 0 12px; color: var(--error); font-size: 14px; font-weight: 600; }
+
+  .resultado { background: var(--rosa); }
+  .resultado h2 { margin: 0 0 4px; font-size: 13px; font-weight: 600; color: var(--suave); }
+  .monto { font-size: 40px; font-weight: 800; color: var(--lavanda-osc); margin: 0; }
+  .letras { margin: 2px 0 12px; font-weight: 600; font-size: 14px; }
+  .detalle { background: #fff; border: 1px solid var(--borde); border-radius: 10px; padding: 10px 14px;
+             font-size: 14px; line-height: 1.7; }
+  .detalle div { padding: 1px 0; }
+  .resultado.alt { background: var(--durazno); }
+  .resultado.alt .monto { font-size: 28px; }
+  .vacio { color: var(--suave); }
+  .oculto { display: none; }
+  footer { font-size: 12px; color: var(--suave); text-align: center; padding: 0 16px 24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Verificador de monto del TDR</h1>
+  <p>Servicio de docencia · Escuela de Posgrado · UNASAM</p>
+</header>
+<div class="franja">
+  <span style="background:#E1F0FC"></span><span style="background:#E2F6EA"></span>
+  <span style="background:#FFEADB"></span><span style="background:#FCE3EA"></span>
+  <span style="background:#EBE0F8"></span>
+</div>
+
+<main>
+  <div class="campos" style="margin-bottom:14px">
+    <div class="campo a">
+      <label for="c1">Programa y semanas</label>
+      <input id="c1" inputmode="text" autocomplete="off" placeholder="D44" autofocus>
+      <p class="ayuda"><b>1.ª</b> programa: <b>M</b> = maestría, <b>D</b> = doctorado<br>
+        <b>2.ª</b> total de semanas (2 a 5)<br><b>3.ª</b> semanas presenciales<br>
+        <b>4.ª</b> semanas virtuales <i>(opcional: se deduce; si la escribes, se comprueba)</i></p>
+    </div>
+    <div class="campo b">
+      <label for="c2">Docente (2 letras)</label>
+      <input id="c2" autocomplete="off" placeholder="ML">
+      <p class="ayuda"><b>1.ª</b> grado: <b>M</b> = Maestro, <b>D</b> = Doctor<br>
+        <b>2.ª</b> procedencia: <b>L</b> = de la localidad (UNASAM),
+        <b>F</b> = fuera de la localidad</p>
+    </div>
+  </div>
+
+  <p class="aviso" id="aviso"></p>
+
+  <section class="card resultado" id="res">
+    <h2 id="res-titulo">Monto total</h2>
+    <p class="monto" id="monto"><span class="vacio">—</span></p>
+    <p class="letras" id="letras"></p>
+    <div class="detalle" id="detalle"><span class="vacio">Escribe los datos en las dos celdas.</span></div>
+  </section>
+
+</main>
+
+<footer>Tarifas y horas iguales a <b>creartdr.py</b>. Si cambian allá, se cambian en la sección TARIFAS de esta página.</footer>
+
+<script>
+// ---------------------------------------------------------------- datos (igual que creartdr.py)
+const HORAS_POR_SEMANA = 12;   // sáb 8 h + dom 4 h
+// TARIFAS[nivel][modalidad][grado]  (S/. por hora efectiva dictada)
+const TARIFAS = {
+  maestria:  { presencial: { M: 115, D: 120 }, virtual: { M: 85, D: 90 } },
+  doctorado: { presencial: { D: 130 },         virtual: { D: 100 } },
+};
+// Tarifas que reemplazan a las anteriores cuando el docente es de FUERA de la localidad
+const TARIFAS_FUERA = {
+  maestria: { presencial: { M: 115, D: 120 } },
+};
+
+function tarifaHora(nivel, modalidad, grado, proc) {
+  if (proc === "F" && TARIFAS_FUERA[nivel]?.[modalidad]?.[grado] !== undefined)
+    return TARIFAS_FUERA[nivel][modalidad][grado];
+  return TARIFAS[nivel][modalidad][grado];
+}
+
+// ---------------------------------------------------------------- número a letras
+const U = ["cero","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve","diez","once","doce",
+  "trece","catorce","quince","dieciséis","diecisiete","dieciocho","diecinueve","veinte","veintiuno",
+  "veintidós","veintitrés","veinticuatro","veinticinco","veintiséis","veintisiete","veintiocho","veintinueve"];
+const D = {3:"treinta",4:"cuarenta",5:"cincuenta",6:"sesenta",7:"setenta",8:"ochenta",9:"noventa"};
+const C = {1:"ciento",2:"doscientos",3:"trescientos",4:"cuatrocientos",5:"quinientos",
+  6:"seiscientos",7:"setecientos",8:"ochocientos",9:"novecientos"};
+
+function menosMil(n) {
+  if (n === 100) return "cien";
+  if (n < 30) return U[n];
+  if (n < 100) { const d = Math.floor(n/10), u = n % 10; return u === 0 ? D[d] : `${D[d]} y ${U[u]}`; }
+  const c = Math.floor(n/100), r = n % 100;
+  return r === 0 ? C[c] : `${C[c]} ${menosMil(r)}`;
+}
+function apocopar(t) {
+  if (t.endsWith("veintiuno")) return t.slice(0, -9) + "veintiún";
+  if (t.endsWith("uno")) return t.slice(0, -3) + "un";
+  return t;
+}
+function letras(n) {
+  if (n < 1000) return menosMil(n);
+  const millones = Math.floor(n / 1e6), resto = n % 1e6, miles = Math.floor(resto / 1000), unidades = resto % 1000;
+  const p = [];
+  if (millones) p.push(millones === 1 ? "un millón" : `${apocopar(letras(millones))} millones`);
+  if (miles) p.push(miles === 1 ? "mil" : `${apocopar(menosMil(miles))} mil`);
+  if (unidades) p.push(menosMil(unidades));
+  return p.join(" ");
+}
+const fmt = x => x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function montoEnLetras(m) {
+  const entero = Math.floor(m + 1e-9), cent = Math.round((m - entero) * 100);
+  return `S/. ${entero.toLocaleString("en-US")}.${String(cent).padStart(2,"0")} ` +
+         `(${letras(entero).toUpperCase()} CON ${String(cent).padStart(2,"0")}/100 SOLES)`;
+}
+
+// ---------------------------------------------------------------- cálculo
+function calcular(nivel, total, pres, virt, grado, proc) {
+  let monto = 0; const lineas = [], subs = [];
+  for (const [mod, n] of [["presencial", pres], ["virtual", virt]]) {
+    if (n <= 0) continue;
+    const horas = n * HORAS_POR_SEMANA, t = tarifaHora(nivel, mod, grado, proc), sub = horas * t;
+    monto += sub; subs.push(sub);
+    lineas.push(`• Modalidad ${mod}: ${n} ${n === 1 ? "semana" : "semanas"} x ${HORAS_POR_SEMANA} horas = ` +
+                `${horas} horas x S/. ${fmt(t)} por hora = S/. ${fmt(sub)}`);
+  }
+  lineas.push(subs.length > 1
+    ? `• Monto total: ${subs.map(s => "S/. " + fmt(s)).join(" + ")} = S/. ${fmt(monto)}`
+    : `• Monto total: S/. ${fmt(monto)}`);
+  return { monto, lineas, texto: montoEnLetras(monto) };
+}
+
+// ---------------------------------------------------------------- interfaz
+const $ = id => document.getElementById(id);
+const c1 = $("c1"), c2 = $("c2");
+
+function pintar(r) {
+  $("monto").textContent = "S/. " + fmt(r.monto);
+  $("letras").textContent = r.texto;
+  $("detalle").innerHTML = r.lineas.map(l => `<div>${l}</div>`).join("");
+}
+function limpiar(msg) {
+  $("monto").innerHTML = '<span class="vacio">—</span>';
+  $("letras").textContent = "";
+  $("detalle").innerHTML = '<span class="vacio">Escribe los datos en las dos celdas.</span>';
+  $("res-titulo").textContent = "Monto total";
+  $("aviso").textContent = msg || "";
+}
+
+function actualizar() {
+  const t1 = c1.value.replace(/\s/g, "").toUpperCase(), t2 = c2.value.replace(/\s/g, "").toUpperCase();
+  c1.classList.remove("mal"); c2.classList.remove("mal");
+  if (!t1 && !t2) return limpiar();
+  const m = t1.match(/^([MD])(\d)(\d)(\d)?$/);
+  if (!m) {
+    if (t1.length >= 3) c1.classList.add("mal");
+    return limpiar(t1.length >= 3 ? "Primera celda: letra M o D y luego las cifras, por ejemplo D44 o D440." : "");
+  }
+  const nivel = m[1] === "D" ? "doctorado" : "maestria";
+  const total = +m[2], pres = +m[3], virt = total - pres;
+  if (total < 2 || total > 5) { c1.classList.add("mal"); return limpiar("El total de semanas debe ser 2, 3, 4 o 5."); }
+  if (pres > total) { c1.classList.add("mal"); return limpiar("Las semanas presenciales no pueden superar el total."); }
+  if (m[4] !== undefined && +m[4] !== virt) {
+    c1.classList.add("mal");
+    return limpiar(`No cuadra: con ${total} semanas y ${pres} presenciales, las virtuales son ${virt}, no ${m[4]}.`);
+  }
+  if (t2.length < 2) return limpiar(t2 ? "La segunda celda necesita 2 letras, por ejemplo ML." : "");
+  if (!/^[MD][LF]$/.test(t2)) {
+    c2.classList.add("mal");
+    return limpiar("Segunda celda: 1.ª letra M o D (grado); 2.ª letra L o F (procedencia).");
+  }
+  const grado = t2[0], proc = t2[1];
+  if (nivel === "doctorado" && grado !== "D") {
+    c2.classList.add("mal");
+    return limpiar("Un programa de doctorado exige docente con grado de Doctor (D).");
+  }
+  $("aviso").textContent = "";
+  $("res-titulo").textContent = "Monto total · programa de " + (nivel === "doctorado" ? "doctorado" : "maestría");
+  pintar(calcular(nivel, total, pres, virt, grado, proc));
+}
+
+const completa1 = () => /^[MD]\d{3}$/.test(c1.value.replace(/\s/g, "").toUpperCase());
+c1.addEventListener("input", () => { actualizar(); if (completa1()) c2.focus(); });
+c1.addEventListener("keydown", e => { if (e.key === " " && c1.value.trim()) { e.preventDefault(); c2.focus(); } });
+c2.addEventListener("input", actualizar);
+c2.addEventListener("keydown", e => { if (e.key === "Backspace" && !c2.value) c1.focus(); });
+</script>
+</body>
+</html>
