@@ -111,20 +111,18 @@
 <script>
 // ---------------------------------------------------------------- datos (igual que creartdr.py)
 const HORAS_POR_SEMANA = 12;   // sáb 8 h + dom 4 h
-// TARIFAS[nivel][modalidad][grado]  (S/. por hora efectiva dictada)
+// TARIFAS[nivel][procedencia][grado]  (S/. por hora de clase, EPG)
+//   nivel = programa donde dicta; procedencia: L = docente UNASAM, F = docente externo
+//   En doctorado solo dictan docentes con grado de Doctor (D).
 const TARIFAS = {
-  maestria:  { presencial: { M: 115, D: 120 }, virtual: { M: 85, D: 90 } },
-  doctorado: { presencial: { M: 130, D: 130 }, virtual: { M: 100, D: 100 } },  // tarifa única
+  maestria:  { L: { M: 85, D: 90 },  F: { M: 115, D: 120 } },
+  doctorado: { L: { D: 100 },        F: { D: 130 } },
 };
-// Tarifas que reemplazan a las anteriores cuando el docente es de FUERA de la localidad
-const TARIFAS_FUERA = {
-  maestria: { presencial: { M: 115, D: 120 } },
-};
-
+// La tarifa de docente externo INCLUYE pasaje y hospedaje, por eso solo se aplica en
+// modalidad presencial; en virtual el docente externo cobra la tarifa de la localidad.
 function tarifaHora(nivel, modalidad, grado, proc) {
-  if (proc === "F" && TARIFAS_FUERA[nivel]?.[modalidad]?.[grado] !== undefined)
-    return TARIFAS_FUERA[nivel][modalidad][grado];
-  return TARIFAS[nivel][modalidad][grado];
+  const p = (proc === "F" && modalidad === "presencial") ? "F" : "L";
+  return TARIFAS[nivel][p][grado];
 }
 
 // ---------------------------------------------------------------- número a letras
@@ -171,7 +169,8 @@ function calcular(nivel, total, pres, virt, grado, proc) {
     const horas = n * HORAS_POR_SEMANA, t = tarifaHora(nivel, mod, grado, proc), sub = horas * t;
     monto += sub; subs.push(sub);
     lineas.push(`• Modalidad ${mod}: ${n} ${n === 1 ? "semana" : "semanas"} x ${HORAS_POR_SEMANA} horas = ` +
-                `${horas} horas x S/. ${fmt(t)} por hora = S/. ${fmt(sub)}`);
+                `${horas} horas x S/. ${fmt(t)} por hora = S/. ${fmt(sub)}` +
+                (proc === "F" && mod === "presencial" ? " (incluye pasaje y hospedaje)" : ""));
   }
   lineas.push(subs.length > 1
     ? `• Monto total: ${subs.map(s => "S/. " + fmt(s)).join(" + ")} = S/. ${fmt(monto)}`
@@ -219,6 +218,10 @@ function actualizar() {
     return limpiar("Segunda celda: 1.ª letra M o D (grado); 2.ª letra L o F (procedencia).");
   }
   const grado = t2[0], proc = t2[1];
+  if (nivel === "doctorado" && grado !== "D") {
+    c2.classList.add("mal");
+    return limpiar("En doctorado solo dictan docentes con grado de Doctor: la 1.ª letra debe ser D.");
+  }
   $("aviso").textContent = "";
   $("res-titulo").textContent = "Monto total · programa de " + (nivel === "doctorado" ? "doctorado" : "maestría");
   pintar(calcular(nivel, total, pres, virt, grado, proc));
